@@ -1,0 +1,16 @@
+html
+	head
+		style
+			include ../style/bootstrap.min.css
+	body.container
+		h1 Online shop
+		a(href="/api/shops") Main page
+		form(method="POST", data-shop=shop, data-user=user)
+			.d-flex.flex-column.justify-content-center
+				p To submit a purchase input next code:
+				p= code
+				input#userCode(type="text")
+				input(type="submit", value="Submit a purchase")
+		script 
+			include ../scripts/jquery-3.4.1.min.js
+			include ../scripts/transaction.js

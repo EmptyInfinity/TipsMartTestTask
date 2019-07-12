@@ -1,0 +1,24 @@
+html
+	head
+		style
+			include ../style/bootstrap.min.css
+			include ../style/shop.css
+	body.container
+		h1 Online shop
+		a(href="/api/shops") Main page
+		h3= shop.name
+		p= shop.link
+		p= 'Balance: ' + shop.balance
+		p Goods: 
+			for good in shop.goods
+				span= good + ' '
+		button Buy
+		form(method="POST", data-shop=shop._id, data-user=user._id)
+			div.d-flex.flex-column.justify-content-center
+				h3 Submit a purchase
+				p 200 UAH
+				p= user._id
+				input(type="submit", value="submit")
+		script 
+			include ../scripts/jquery-3.4.1.min.js
+			include ../scripts/shop.js

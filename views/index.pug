@@ -1,0 +1,14 @@
+html
+  head
+    title= title
+  body
+    h1 Online shop
+    a(href="/api/shops") Main page
+    ul
+      for shop in shops
+        li
+          p= shop.name
+          p= shop.link
+          p= 'Balance:' + shop.balance
+          a(href='shops/'+shop._id) goods
+          hr
