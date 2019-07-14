@@ -1,12 +1,24 @@
 let userCode = document.getElementById('userCode')
 let form = document.querySelector('form')
+let errorNode = document.getElementById('error')
 
 form.addEventListener('submit', (e) => {
-    e.preventDefault()
+		e.preventDefault()
 
-    $.ajax({
-        url: `/api/shops/${form.dataset.shop}/transaction/${userCode.value}`,
+		$.ajax({
+        url: ``,
         contentType: "application/json",
-        method: "PUT",
-    })
+				method: "PUT",
+				data: JSON.stringify({
+					user: form.dataset.user,
+					code: userCode.value
+				}),
+				success: function(data){
+					if (data.errorMessage){
+						errorNode.innerText = data.errorMessage
+					} else {
+						window.location = `/api/shops`
+					}
+				}
+		})
 })

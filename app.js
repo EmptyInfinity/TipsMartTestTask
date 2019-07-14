@@ -88,7 +88,7 @@ let shop3 = new Shop({
     price: 100
 })
 let user1 = new User({
-    balance: 350
+    balance: 950
 })
 user1.save()
 
@@ -118,42 +118,54 @@ function generateString() {
 }
 
 app.get('/api/shops', function (req, res) {
-    Shop.find({}, function (err, shops) {
-        if (err) return console.log(err)
-        if (shops.length < 3) {
-            Shop.insertMany([shop1, shop2, shop3], function (err) {
-                if (err) return console.log(err)
-            })
-        }
-        res.render('index', { title: 'Hey', shops: shops })
-    })
-    // Confirmation.deleteMany({}, function(err, shops){
+    (async renderShops => {
+        user = await User.findOne({}, function (err, user) {
+            if (err) console.log(err)
+            return user
+        })
+
+        Shop.find({}, function (err, shops) {
+            if (err) return console.log(err)
+            if (shops.length < 3) {
+                Shop.insertMany([shop1, shop2, shop3], function (err) {
+                    if (err) return console.log(err)
+                })
+            }
+            res.render('index', { title: 'Hey', shops: shops, user: user })
+        })
+    })()
+    // User.deleteMany({}, function(err, shops){
     //     res.send(shops)
     // })
 })
 
 app.get('/api/shops/:id', jsonParser, function (req, res) {
     Shop.findOne({ _id: req.params.id }, function (err, shop) {
-        if (err) return console.log(err)
-        async function renderShopByUser() {
-            let user = await getLastCreatedUser()
-            res.render('shop', { shop: shop, user: user })
+        if (err) {
+            res.render('error', { message: 'Shop not found!' })
+            return console.error('error: ' + err)
+        } else {
+            (async renderShopByUser => {
+                let user = await getLastCreatedUser()
+                res.render('shop', { shop: shop, user: user })
+            })()
         }
-        renderShopByUser()
     })
 })
 
-app.post('/api/shops/:id/transaction', jsonParser, function (req, res) {
-    User.findOne({}, function (err, user) {
+app.post('/api/shops/:id', jsonParser, function (req, res) {
+    // console.log(req.body, req.params)
+    User.findOne({ _id: req.body.user }, function (err, user) {
         if (err) return console.log(err)
         if (user.balance < 200) {
-            return console.log('Not enougth money!', user.balance)
+            res.send({ errorMessage: 'Not enough money!' })
         } else {
             let newTransaction = new Transaction({
                 _user: user._id,
                 _shop: req.params.id,
-                created: req.params.created,
+                created: req.body.created,
                 sumTransaction: 200
+
             })
             let newConfirmation = new Confirmation({
                 _user: user._id,
@@ -163,47 +175,65 @@ app.post('/api/shops/:id/transaction', jsonParser, function (req, res) {
             })
             newTransaction.save()
             newConfirmation.save()
+            res.send({
+                code: newConfirmation.code
+            })
         }
     })
 })
 
 app.get('/api/shops/:id/transaction', jsonParser, function (req, res) {
-    Confirmation.findOne({ _shop: req.params.id }, function (err, confirmation) {
+    console.log(req.body, req.params)
+    User.findOne({ _id: req.body.user }, function (err, user) {
         if (err) return console.log(err)
-        res.render('transaction', {
-            code: confirmation.code,
-            user: confirmation._user,
-            shop: confirmation._shop
-        })
+        console.log(user)
     })
+    res.render('transaction')
 })
 
 
+app.get('/api/shops/:id/transaction/:code', jsonParser, function (req, res) {
+    (async getConfirmation => {
+        let confirmation = await Confirmation.findOne(
+            { code: req.params.code },
+            function (err, confirmation) {
+                if (err) return console.log(err)
+                return confirmation
+            })
+        res.render('transaction', {
+            code: confirmation.code
+        })
+    })()
+})
 app.put('/api/shops/:id/transaction/:code', jsonParser, function (req, res) {
-    Confirmation.findOne({ code: req.params.code }, function (err, confirmation) {
-        if (err) return console.log(err)
-        User.findOneAndUpdate({ _id: confirmation._user },
-            { $inc: { balance: -200 } },
-            { new: true },
-            function (err, user) {
-                if (err) return console.log(err)
-                console.log('\n user: ' + user)
-            })
-        Transaction.findOneAndUpdate(
-            { _user: confirmation._user },
-            { $set: { status: 1 } },
-            { new: true },
-            function (err, transaction) {
-                if (err) return console.log(err)
-                console.log('\n transaction: ' + transaction)
-            })
-        Shop.findOneAndUpdate(
-            { _id: req.params.id },
-            { $inc: { balance: 200 } },
-            { new: true },
-            function (err, shop) {
-                if (err) return console.log(err)
-                console.log('\n shop: ' + shop)
-            })
+    Confirmation.findOne({ code: req.body.code }, function (err, confirmation) {
+        if (err || !confirmation) {
+            res.send({errorMessage: 'No such code!'})
+        } else {
+            User.findOneAndUpdate({ _id: confirmation._user },
+                { $inc: { balance: -200 } },
+                { new: true },
+                function (err, user) {
+                    if (err) return console.log(err)
+                    // console.log('\n user: ' + user)
+                })
+            Transaction.findOneAndUpdate(
+                { _user: confirmation._user },
+                { $set: { status: 1 } },
+                { new: true },
+                function (err, transaction) {
+                    if (err) return console.log(err)
+                    // console.log('\n transaction: ' + transaction)
+                })
+            Shop.findOneAndUpdate(
+                { _id: req.params.id },
+                { $inc: { balance: 200 } },
+                { new: true },
+                function (err, shop) {
+                    if (err) return console.log(err)
+                    // console.log('\n shop: ' + shop)
+                })
+                res.send()
+        }
     })
 })

@@ -6,6 +6,7 @@ form{
     left: 0;
     right: 0;
     background: #ccc;
+    margin: 0;
 }
 form.active{
     display: block;

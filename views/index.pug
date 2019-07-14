@@ -1,14 +1,23 @@
 html
   head
     title= title
-  body
+    block links
+      style
+        include ../style/bootstrap.min.css
+  body.container
     h1 Online shop
     a(href="/api/shops") Main page
-    ul
-      for shop in shops
-        li
-          p= shop.name
-          p= shop.link
-          p= 'Balance:' + shop.balance
-          a(href='shops/'+shop._id) goods
-          hr
+    p= 'Your balance: ' + user.balance
+    p= 'Your id: ' + user._id
+    block shop
+      ul
+        for shop in shops
+          li
+            p= shop.name
+            p= shop.link
+            p= 'Balance:' + shop.balance
+            a(href='shops/'+shop._id) goods
+            hr
+    block scripts
+      script 
+        include ../scripts/jquery-3.4.1.min.js
